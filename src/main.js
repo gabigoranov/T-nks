@@ -1,137 +1,60 @@
-import kaboom from "kaboom";
+import k from "./kaboom.js";
+import { Player } from "./player.js";
+import { Laser } from "./components/laser.js"
+import { AmmoBar } from "./components/ammoBar.js";
+import { HealthBar } from "./components/healthBar.js";
+import { DeathMessage } from "./components/deathMessage.js";
+import { HighscoreText } from "./components/highscoreText.js";
 
-
-//kaboom init
-kaboom();
-setBackground(155, 200, 155);
-
-loadSprite("player", "sprites/player.png");
-loadSprite("bullet", "sprites/bullet.png");
+k.loadSprite("bullet", "sprites/bullet.png");
 
 //properties
-let maxAmmo = 30;
-let ammo = maxAmmo;
-let enemiesToSpawn = maxAmmo-10;
-const enemiesToKill = enemiesToSpawn;
+let ammo = 30;
+let enemiesToSpawn = ammo-10;
 let enemiesKilled = 0;
+const enemiesToKill = ammo-10;
 
 let score = 0;
-if(document.cookie != null){
-    score = parseInt(document.cookie)
-    console.log(document.cookie)
+if(document.cookie != null && document.cookie != 'NaN' && document.cookie != ''){
+    score = parseInt(document.cookie);
 }
 
 //kaboom objects
-const player = add([
-    sprite("player"),
-	scale(1),
-	anchor("center"),
-    pos(100, 200),
-    area(),
-    body(),
-	rotate(0),
-    "player",
-    {
-        dir: LEFT,
-        dead: false,
-        speed: 24000,
-        health: 20,
-        isInvincible: false,
-    },
-])
+const player = new Player(100, 200, 0, 24000, 20, ammo);
 
-
-const laser = add([
-    rect(10000, 2), // Adjust size as needed
-    pos(player.pos.x, player.pos.y), // Start at player's position
-    color(255, 0, 0), // Red color (customize as desired)
-]);
-
-const ammoBar = add([
-    rect(ammo * 10, 10), 
-    pos(100, 20), 
-    color(1, 0, 0),
-]);
-
-const healthBar = add([
-    rect(player.health*8, 30), 
-    pos(100, 50), 
-    color(0, 200, 0),
-]);
-
-const deathMessage = add([
-    text(""), 
-    pos(100, 50), 
-    color(200, 0, 0),
-]);
-
-const highscoreText = add([
-    text("Highscore: " + score),
-    pos(1000, 20), // Centered position
-    color(0, 0, 0),
-    scale(1), // Adjust size as needed
-]);
+export const laser = new Laser(player.obj);
+export const ammoBar = new AmmoBar(player.ammo);
+export const healthBar = new HealthBar(player.obj);
+export const deathMessage = new DeathMessage();
+export const highscoreText = new HighscoreText(score).obj;
 
 //functions
 
-function showOutOfAmmoPopup() {
-    const popup = add([
-        text("Out of Ammo!"),
-        pos(100 , 20), // Centered position
-        color(255, 0, 0),
-        scale(1), // Adjust size as needed
-        lifespan(1), // Show for 2 seconds
-    ]);
-
-    laser.width = 0;
-    laser.height = 0;
-}
 
 
-function updateAmmoBar(ammoCount) {
-    ammoBar.width = ammoCount * 10; // Adjust the multiplier as needed
-}
 
-function shoot() {
-    if(ammo == 0){
-        showOutOfAmmoPopup();
-        return;
-    }
-    const bullet = add([
-        sprite("bullet"),
-        pos(player.pos.x, player.pos.y),
-		scale(0.3),
-        rotate(player.angle),
-        area(),
-        anchor("center"),
-        {
-            speed: 1000,
-        },
-        "bullet"
-    ]);
 
-    ammo -= 1
-    updateAmmoBar(ammo)
-}
+
+
 
 function makePlayerInvincible() {
-    player.isInvincible = true; 
+    player.obj.isInvincible = true; 
     wait(0.3, () => {
-        player.isInvincible = false; 
+        player.obj.isInvincible = false; 
     });
 }
 
 function spawnEnemy(){
     enemyX = rand(width());
     enemyY = rand(height());
-    const playerDistance = Math.sqrt((player.pos.x - enemyX) ** 2 + (player.pos.y - enemyY) ** 2);
+    const playerDistance = Math.sqrt((player.obj.pos.x - enemyX) ** 2 + (player.obj.pos.y - enemyY) ** 2);
     if(playerDistance < 500) {
         // Recalculate position
         enemyX = rand(width());
         enemyY = rand(height());
     }
 
-    add([
+    k.add([
         sprite("player"),
         scale(1),
         anchor("center"),
@@ -160,38 +83,38 @@ function spawnEnemy(){
 
 //kaboom methods
 
-onUpdate(() => {
-    laser.angle = player.angle;
-    laser.pos = player.pos;
-    healthBar.width = player.health*8;
+k.onUpdate(() => {
+    laser.obj.angle = player.obj.angle;
+    laser.obj.pos = player.obj.pos;
+    healthBar.obj.width = player.obj.health*8;
 })
  
-onKeyDown("a", () => {
+k.onKeyDown("a", () => {
     let speed = 150
-    player.angle -= speed * dt();
+    player.obj.angle -= speed * dt();
 });
 
-onKeyDown("d", () => {
+k.onKeyDown("d", () => {
     let speed = 150
-    player.angle += speed * dt();
+    player.obj.angle += speed * dt();
 });
 
-onKeyDown("w", () => {
-    const angleInRadians = player.angle * Math.PI / 180; // convert to radians
-    const dx = Math.cos(angleInRadians) * player.speed * dt();  // calculate delta x
-    const dy = Math.sin(angleInRadians) * player.speed * dt();  // calculate delta y
-    player.move(dx, dy);
+k.onKeyDown("w", () => {
+    const angleInRadians = player.obj.angle * Math.PI / 180; // convert to radians
+    const dx = Math.cos(angleInRadians) * player.obj.speed * dt();  // calculate delta x
+    const dy = Math.sin(angleInRadians) * player.obj.speed * dt();  // calculate delta y
+    player.obj.move(dx, dy);
 });
 
-onKeyDown("s", () => {
-    const angleInRadians = player.angle * Math.PI / 180; // convert to radians
-    const dx = Math.cos(angleInRadians) * player.speed *0.4 * dt();  // calculate delta x
-    const dy = Math.sin(angleInRadians) * player.speed *0.4 * dt();  // calculate delta y
-    player.move(-dx, -dy);
+k.onKeyDown("s", () => {
+    const angleInRadians = player.obj.angle * Math.PI / 180; // convert to radians
+    const dx = Math.cos(angleInRadians) * player.obj.speed *0.4 * dt();  // calculate delta x
+    const dy = Math.sin(angleInRadians) * player.obj.speed *0.4 * dt();  // calculate delta y
+    player.obj.move(-dx, -dy);
 });
 
 
-onUpdate("bullet", (bullet) => {
+k.onUpdate("bullet", (bullet) => {
     const angleInRadians = bullet.angle * Math.PI / 180; 
 	bullet.move(Math.cos(angleInRadians)*bullet.speed, Math.sin(angleInRadians)*bullet.speed)
 
@@ -202,7 +125,7 @@ onUpdate("bullet", (bullet) => {
     }
 })
 
-onCollide("enemy", "bullet", (enemy, bullet) => {
+k.onCollide("enemy", "bullet", (enemy, bullet) => {
     enemiesKilled++
     score += 3
     add([
@@ -221,43 +144,43 @@ onCollide("enemy", "bullet", (enemy, bullet) => {
     destroy(bullet)
 })
 
-onCollide("bonus", "player", (bonus, player) => {
+k.onCollide("bonus", "player", (bonus, player) => {
     score += 2
-    ammo++
-    updateAmmoBar(ammo)
+    player.ammo++;
+    ammoBar.updateAmmoBar(player.ammo)
     destroy(bonus)
 })
 
-onCollideUpdate("enemy", "player", (enemy, player) => {
+k.onCollideUpdate("enemy", "player", (enemy, player) => {
     if(!player.isInvincible){
         player.health -= 1;
         makePlayerInvincible()
     }
     if(player.health <= 0){
-        healthBar.width = 0
-        healthBar.health = 0
-        deathMessage.text = "You DIED!"
+        healthBar.obj.width = 0
+        healthBar.obj.health = 0
+        deathMessage.obj.text = "You DIED!"
     }
 })
 
-onUpdate("enemy", (enemy) => {
+k.onUpdate("enemy", (enemy) => {
 
-	const dx = player.pos.x - enemy.pos.x;
-    const dy = player.pos.y - enemy.pos.y;
+	const dx = player.obj.pos.x - enemy.pos.x;
+    const dy = player.obj.pos.y - enemy.pos.y;
     const angle = Math.atan2(dy, dx);
   
     const speedX = enemy.speed * Math.cos(angle);
     const speedY = enemy.speed * Math.sin(angle);
 
-    const angleToPlayer = player.pos.angle(enemy.pos);
+    const angleToPlayer = player.obj.pos.angle(enemy.pos);
     enemy.angle = angleToPlayer;
     
     enemy.pos.x += speedX;
     enemy.pos.y += speedY;
 })
 
-onKeyPress("space", () => {
-    shoot();
+k.onKeyPress("space", () => {
+    player.shoot();
 });
 
 //others
